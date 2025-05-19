@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: cortex-ai
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: SECRET_KEY
+        value: <your-secret-key>
+      - key: GOOGLE_OAUTH_CLIENT_ID
+        value: <google-client-id>
+      - key: GOOGLE_OAUTH_CLIENT_SECRET
+        value: <google-client-secret>
+      - key: MAIL_USERNAME
+        value: <smtp-username>
+      - key: MAIL_PASSWORD
+        value: <smtp-password>

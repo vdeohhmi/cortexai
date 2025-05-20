@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Lesson – Cortex.ai{% endblock %}
+{% block content %}
+<h2>{{ course.title }} – Lesson</h2>
+{% if video %}
+  <video class="w-100" controls>
+    <source src="{{ url_for('static', filename='videos/' ~ video) }}" type="video/mp4">
+    Your browser does not support video.
+  </video>
+{% else %}
+  <p>No video uploaded yet.</p>
+{% endif %}
+{% endblock %}

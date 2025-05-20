@@ -6,7 +6,7 @@ services:
     startCommand: gunicorn app:app
     envVars:
       - key: SECRET_KEY
-        value: <your-secret-key>
+        value: b6cf73addb96d35f02abc59284d0f09fa6e2031572894b97c826367abb25b71f
       - key: GOOGLE_OAUTH_CLIENT_ID
         value: <google-client-id>
       - key: GOOGLE_OAUTH_CLIENT_SECRET

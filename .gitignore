@@ -2,6 +2,5 @@ __pycache__/
 *.pyc
 instance/*.csv
 static/videos/
-static/fullcalendar/
 venv/
 .env

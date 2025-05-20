@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Manage Courses – Cortex.ai{% endblock %}
+{% block content %}
+<h2>All Courses</h2>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Title</th>
+      <th>Educator</th>
+      <th>Status</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for c in read_courses() %}
+    <tr>
+      <td>{{ c.title }}</td>
+      <td>{{ c.educator }}</td>
+      <td>{{ c.status }}</td>
+      <td>
+        {% if c.status=='pending' %}
+          <a href="{{ url_for('approve_course', cid=c.id) }}" class="btn btn-sm btn-success">Approve</a>
+        {% endif %}
+        <a href="{{ url_for('course_detail', cid=c.id) }}" class="btn btn-sm btn-primary">View</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

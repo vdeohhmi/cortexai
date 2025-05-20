@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Educator Profile – Cortex.ai{% endblock %}
+{% block content %}
+<h2>Instructor Dashboard</h2>
+<h4 class="mt-4">Your Courses</h4>
+<ul class="list-group mb-4">
+  {% for c in courses %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+      {{ c.title }} ({{ c.status }})
+      <a href="{{ url_for('course_detail', cid=c.id) }}" class="btn btn-sm btn-primary">View</a>
+    </li>
+  {% endfor %}
+</ul>
+<div class="card shadow-sm p-4">
+  <h5>Add New Course</h5>
+  <form method="post" action="{{ url_for('admin_courses') }}">
+    <div class="mb-3">
+      <label class="form-label">Title</label>
+      <input name="title" class="form-control" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Description</label>
+      <textarea name="description" class="form-control" required></textarea>
+    </div>
+    <button class="btn btn-success">Submit for Review</button>
+  </form>
+</div>
+{% endblock %}

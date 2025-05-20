@@ -1,0 +1,110 @@
+/* CSS Variables for Light/Dark Mode */
+:root {
+  --bg: #f0f2f5;
+  --fg: #212529;
+  --primary: #3b82f6;
+  --card-bg: #ffffff;
+  --card-hover: rgba(0, 0, 0, 0.1);
+}
+[data-theme="dark"] {
+  --bg: #121212;
+  --fg: #e1e1e1;
+  --primary: #3b82f6;
+  --card-bg: #1e1e1e;
+  --card-hover: rgba(255, 255, 255, 0.1);
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: 'Poppins', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  color: var(--primary);
+}
+
+a:hover {
+  text-decoration: none;
+  opacity: 0.8;
+}
+
+.navbar {
+  background-color: var(--primary) !important;
+}
+
+.navbar-brand img {
+  margin-right: 0.5rem;
+}
+
+.container {
+  max-width: 1140px;
+}
+
+/* Hero Section */
+.hero {
+  background: linear-gradient(45deg, #3b82f6, #9333ea);
+  color: #fff;
+  padding: 4rem 0;
+  text-align: center;
+}
+
+/* Cards Hover Effect */
+.card {
+  background-color: var(--card-bg);
+  border: none;
+  border-radius: 0.75rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 8px 20px var(--card-hover);
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--primary);
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: #2563eb;
+}
+
+/* Progress Circle */
+.circle-bg {
+  fill: none;
+  stroke: #eee;
+  stroke-width: 3.8;
+}
+
+.circle {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 3.8;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.5s ease;
+}
+
+.percentage {
+  fill: var(--fg);
+  font-size: 0.5em;
+  text-anchor: middle;
+}
+
+/* FullCalendar Overrides */
+.fc-header-toolbar {
+  margin-bottom: 1rem;
+}
+
+.fc .fc-daygrid-day-top .fc-daygrid-day-number {
+  color: var(--fg);
+}
+
+.fc .fc-event {
+  background-color: var(--primary);
+  border: none;
+}

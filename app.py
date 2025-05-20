@@ -146,11 +146,13 @@ serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
 # --- Template Context & Auth Decorator ---
 @app.context_processor
-def inject_helpers():
-    return {
-        'current_user': find_user(session.get('user')),
-        'find_user': find_user
-    }
+ def inject_helpers():
+     return {
+         'current_user': find_user(session.get('user')),
+         'find_user': find_user,
+         'read_courses': read_courses,
+         'read_quizzes': read_quizzes
+     }
 
 def login_required(f):
     @wraps(f)
@@ -360,3 +362,4 @@ def download(name):
 
 if __name__ == '__main__':
     app.run(debug=True)
+```

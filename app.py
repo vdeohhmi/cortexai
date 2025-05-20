@@ -22,21 +22,36 @@ INSTANCE = os.path.join(BASE_DIR, 'instance')
 os.makedirs(INSTANCE, exist_ok=True)
 
 # --- CSV Helpers ---
+
 def csv_path(filename):
     return os.path.join(INSTANCE, filename)
 
 def read_csv(filename):
+    """
+    Read a CSV file into a list of dicts, cleaning up any extra columns.
+    Discards any None keys from rows.
+    """
     path = csv_path(filename)
+    rows = []
     if not os.path.exists(path):
-        return []
+        return rows
     with open(path, newline='') as f:
-        return list(csv.DictReader(f))
+        reader = csv.DictReader(f)
+        for r in reader:
+            # Remove any extra fields assigned to None key
+            if None in r:
+                r.pop(None)
+            rows.append(r)
+    return rows
 
 def append_csv(filename, row):
+    """
+    Append a dict row to CSV, writing header if file is new.
+    """
     path = csv_path(filename)
     file_exists = os.path.exists(path)
     with open(path, 'a', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=row.keys())
+        writer = csv.DictWriter(f, fieldnames=list(row.keys()))
         if not file_exists:
             writer.writeheader()
         writer.writerow(row)

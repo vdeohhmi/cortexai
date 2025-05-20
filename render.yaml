@@ -8,10 +8,10 @@ services:
       - key: SECRET_KEY
         value: b6cf73addb96d35f02abc59284d0f09fa6e2031572894b97c826367abb25b71f
       - key: GOOGLE_OAUTH_CLIENT_ID
-        value: <google-client-id>
+        value: 695946843347-sc089ujmi0tsc2rmrohjmc2de84cr1ij.apps.googleusercontent.com
       - key: GOOGLE_OAUTH_CLIENT_SECRET
-        value: <google-client-secret>
+        value: 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
       - key: MAIL_USERNAME
-        value: <smtp-username>
+        value: vishaldeo111@gmail.com
       - key: MAIL_PASSWORD
-        value: <smtp-password>
+        value: Comp@2801

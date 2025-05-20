@@ -234,5 +234,23 @@ def download(name):
     if not os.path.exists(path): abort(404)
     return send_file(path, as_attachment=True, download_name=f"{name}.csv")
 
+@app.route('/educator/add_course', methods=['POST'])
+@login_required
+def educator_add_course():
+    user = find_user(session['user'])
+    if user['role'] != 'educator':
+        abort(403)
+    # generate a new course record, mark as active so students can enroll immediately
+    cid = str(uuid.uuid4())
+    write_course({
+        'id': cid,
+        'title':   request.form['title'],
+        'description': request.form['description'],
+        'educator':    user['username'],
+        'status':      'active'
+    })
+    flash('Course created! Students can now enroll.', 'success')
+    return redirect(url_for('profile'))
+
 if __name__ == '__main__':
     app.run(debug=True)

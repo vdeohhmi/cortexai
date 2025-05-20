@@ -1,7 +1,7 @@
-import os, csv, uuid, json
+import os, csv, uuid
 from flask import (
     Flask, render_template, redirect, url_for,
-    request, flash, session, send_file, abort, jsonify
+    request, flash, session, send_file, abort
 )
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -23,57 +23,55 @@ def csv_path(fname): return os.path.join(top,'instance',fname)
 
 # Generic CSV read/write
 def read_csv(name, fields):
-    path=csv_path(name)
-    data=[]
+    path = csv_path(name)
+    rows = []
     if os.path.exists(path):
-        with open(path,newline='') as f:
-            r=csv.DictReader(f,fieldnames=fields)
-            next(r,None)
-            for row in r: data.append(row)
-    return data
+        with open(path, newline='') as f:
+            reader = csv.DictReader(f, fieldnames=fields)
+            next(reader, None)
+            for row in reader:
+                rows.append(row)
+    return rows
 
-def append_csv(name,row,fields):
-    path=csv_path(name)
-    exists=os.path.exists(path)
-    with open(path,'a',newline='') as f:
-        w=csv.DictWriter(f,fieldnames=fields)
-        if not exists: w.writeheader()
-        w.writerow(row)
+def append_csv(name, row, fields):
+    path = csv_path(name)
+    exists = os.path.exists(path)
+    with open(path, 'a', newline='') as f:
+        writer = csv.DictWriter(f, fieldnames=fields)
+        if not exists:
+            writer.writeheader()
+        writer.writerow(row)
 
 # Models
-USER_FIELDS=['username','password_hash','role']
-COURSE_FIELDS=['id','title','description','educator','status']
-ENROLL_FIELDS=['username','course_id']
-VIDEO_FIELDS=['course_id','filename']
-QUIZ_FIELDS=['id','course_id','question','options','answer']
-RESULT_FIELDS=['username','quiz_id','selected','correct']
-LECT_FIELDS=['id','course_id','title','start']
+USER_FIELDS = ['username','password_hash','role']
+COURSE_FIELDS = ['id','title','description','educator','status']
+ENROLL_FIELDS = ['username','course_id']
+VIDEO_FIELDS = ['course_id','filename']
+QUIZ_FIELDS = ['id','course_id','question','options','answer']
+RESULT_FIELDS = ['username','quiz_id','selected','correct']
 
-read_users=lambda: read_csv('users.csv',USER_FIELDS)
-write_user=lambda u,ph,role: append_csv('users.csv',{'username':u,'password_hash':ph,'role':role},USER_FIELDS)
-find_user=lambda u: next((x for x in read_users() if x['username']==u),None)
+read_users = lambda: read_csv('users.csv', USER_FIELDS)
+write_user = lambda u,ph,role: append_csv('users.csv',{'username':u,'password_hash':ph,'role':role},USER_FIELDS)
+find_user = lambda u: next((x for x in read_users() if x['username']==u), None)
 
-read_courses=lambda: read_csv('courses.csv',COURSE_FIELDS)
-write_course=lambda c: append_csv('courses.csv',c,COURSE_FIELDS)
-find_course=lambda cid: next((c for c in read_courses() if c['id']==cid),None)
+read_courses = lambda: read_csv('courses.csv', COURSE_FIELDS)
+write_course = lambda c: append_csv('courses.csv', c, COURSE_FIELDS)
+find_course = lambda cid: next((c for c in read_courses() if c['id']==cid), None)
 
-read_enroll=lambda: read_csv('enrollments.csv',ENROLL_FIELDS)
-enroll_user=lambda u,cid: append_csv('enrollments.csv',{'username':u,'course_id':cid},ENROLL_FIELDS)
-is_enrolled=lambda u,cid:any(e for e in read_enroll() if e['username']==u and e['course_id']==cid)
+read_enroll = lambda: read_csv('enrollments.csv', ENROLL_FIELDS)
+enroll_user = lambda u,cid: append_csv('enrollments.csv',{'username':u,'course_id':cid},ENROLL_FIELDS)
+is_enrolled = lambda u,cid:any(e for e in read_enroll() if e['username']==u and e['course_id']==cid)
 
-read_videos=lambda: read_csv('videos.csv',VIDEO_FIELDS)
-map_video=lambda cid: next((v['filename'] for v in read_videos() if v['course_id']==cid),None)
-save_video=lambda cid,fn: append_csv('videos.csv',{'course_id':cid,'filename':fn},VIDEO_FIELDS)
+read_videos = lambda: read_csv('videos.csv', VIDEO_FIELDS)
+map_video = lambda cid: next((v['filename'] for v in read_videos() if v['course_id']==cid), None)
+save_video = lambda cid,fn: append_csv('videos.csv',{'course_id':cid,'filename':fn},VIDEO_FIELDS)
 
-read_quizzes=lambda: read_csv('quizzes.csv',QUIZ_FIELDS)
-write_quiz=lambda q: append_csv('quizzes.csv',q,QUIZ_FIELDS)
-course_quizzes=lambda cid:[q for q in read_quizzes() if q['course_id']==cid]
+read_quizzes = lambda: read_csv('quizzes.csv', QUIZ_FIELDS)
+write_quiz = lambda q: append_csv('quizzes.csv', q, QUIZ_FIELDS)
+course_quizzes = lambda cid: [q for q in read_quizzes() if q['course_id']==cid]
 
-write_result=lambda r: append_csv('quiz_results.csv',r,RESULT_FIELDS)
-user_results=lambda u:[r for r in read_csv('quiz_results.csv',RESULT_FIELDS) if r['username']==u]
-
-read_lectures=lambda: read_csv('lectures.csv',LECT_FIELDS)
-write_lecture=lambda l: append_csv('lectures.csv',l,LECT_FIELDS)
+write_result = lambda r: append_csv('quiz_results.csv', r, RESULT_FIELDS)
+user_results = lambda u: [r for r in read_csv('quiz_results.csv', RESULT_FIELDS) if r['username']==u]
 
 # OAuth & Mail
 google_bp = make_google_blueprint(
@@ -82,7 +80,7 @@ google_bp = make_google_blueprint(
     scope=["profile","email"],
     redirect_url='/login/google/authorized'
 )
-app.register_blueprint(google_bp,url_prefix='/login')
+app.register_blueprint(google_bp, url_prefix='/login')
 
 app.config.update(
     MAIL_SERVER='smtp.gmail.com',
@@ -91,97 +89,158 @@ app.config.update(
     MAIL_USERNAME=os.environ.get('MAIL_USERNAME'),
     MAIL_PASSWORD=os.environ.get('MAIL_PASSWORD')
 )
-mail=Mail(app)
-serializer=URLSafeTimedSerializer(app.config['SECRET_KEY'])
+mail = Mail(app)
+serializer = URLSafeTimedSerializer(app.config['SECRET_KEY'])
 
 # Defaults
-if not find_user('admin'): write_user('admin',generate_password_hash('comp2801'),'admin')
+if not find_user('admin'):
+    write_user('admin', generate_password_hash('comp2801'), 'admin')
 if not os.path.exists(csv_path('courses.csv')):
-    for i,(t,d) in enumerate([('Intro AI','Basics'),('ML','Algorithms')], start=1):
-        write_course({'id':str(i),'title':t,'description':d,'educator':'admin','status':'active'})
+    sample_courses = [
+        {'id':'1','title':'Intro to AI','description':'Basics of AI','educator':'admin','status':'active'},
+        {'id':'2','title':'Machine Learning','description':'ML algorithms','educator':'admin','status':'active'}
+    ]
+    for c in sample_courses:
+        write_course(c)
 
 # Routes
 @app.route('/')
 def catalog():
-    if 'user' not in session: return redirect(url_for('login'))
-    return render_template('catalog.html',courses=read_courses())
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    return render_template('catalog.html', courses=read_courses())
 
 @app.route('/course/<cid>')
 def course_detail(cid):
-    c=find_course(cid); abort(404) if not c else None
-    return render_template('course_detail.html',course=c,enrolled=is_enrolled(session['user'],cid),video=map_video(cid))
+    course = find_course(cid)
+    if not course:
+        abort(404)
+    return render_template('course_detail.html', course=course, enrolled=is_enrolled(session.get('user'), cid), video=map_video(cid))
 
 @app.route('/enroll/<cid>')
 def enroll(cid):
-    enroll_user(session['user'],cid); flash('Enrolled!','success')
-    return redirect(url_for('course_detail',cid=cid))
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    enroll_user(session['user'], cid)
+    flash('Enrolled!', 'success')
+    return redirect(url_for('course_detail', cid=cid))
 
 @app.route('/lesson/<cid>')
 def lesson(cid):
-    abort(403) if not is_enrolled(session.get('user'),cid) else None
-    return render_template('lesson.html',course=find_course(cid),video=map_video(cid))
+    if not is_enrolled(session.get('user'), cid):
+        abort(403)
+    course = find_course(cid)
+    return render_template('lesson.html', course=course, video=map_video(cid))
 
-@app.route('/quiz/<cid>',methods=['GET','POST'])
+@app.route('/quiz/<cid>', methods=['GET','POST'])
 def take_quiz(cid):
-    qs=course_quizzes(cid)
-    if request.method=='POST':
-        s=0
-        for q in qs:
-            sel=request.form.get(q['id']); write_result({'username':session['user'],'quiz_id':q['id'],'selected':sel,'correct':str(q['answer'])})
-            s+=1 if sel==str(q['answer']) else 0
-        return render_template('quiz_result.html',score=s,total=len(qs))
-    return render_template('take_quiz.html',quizzes=qs)
+    quizzes = course_quizzes(cid)
+    if request.method == 'POST':
+        score = 0
+        for q in quizzes:
+            sel = request.form.get(q['id'])
+            write_result({
+                'username': session['user'],
+                'quiz_id': q['id'],
+                'selected': sel,
+                'correct': str(q['answer'])
+            })
+            if sel == str(q['answer']):
+                score += 1
+        return render_template('quiz_result.html', score=score, total=len(quizzes))
+    return render_template('take_quiz.html', quizzes=quizzes)
 
 @app.route('/profile')
 def profile():
-    u=find_user(session['user'])
-    if u['role']=='student': return render_template('student_profile.html',user=u,enrolls=read_enroll(),results=user_results(session['user']))
-    if u['role']=='educator': return render_template('educator_profile.html',user=u,courses=[c for c in read_courses() if c['educator']==u['username']],lectures=read_lectures())
-    return render_template('admin_dashboard.html')
+    user = find_user(session['user'])
+    if user['role'] == 'student':
+        enrolls = read_enroll()
+        results = user_results(session['user'])
+        return render_template('student_profile.html', user=user, enrolls=enrolls, results=results)
+    elif user['role'] == 'educator':
+        courses = [c for c in read_courses() if c['educator'] == session['user']]
+        return render_template('educator_profile.html', user=user, courses=courses)
+    else:
+        return render_template('admin_dashboard.html')
 
-@app.route('/register',methods=['GET','POST'])
+@app.route('/register', methods=['GET','POST'])
 def register():
-    if request.method=='POST': write_user(request.form['username'],generate_password_hash(request.form['password']),request.form['role']);flash('OK','success');return redirect(url_for('login'))
-    return render_template('register.html',roles=['student','educator'])
+    roles = ['student', 'educator']
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        role = request.form['role']
+        write_user(username, generate_password_hash(password), role)
+        flash('Account created!','success')
+        return redirect(url_for('login'))
+    return render_template('register.html', roles=roles)
 
-@app.route('/login',methods=['GET','POST'])
+@app.route('/login', methods=['GET','POST'])
 def login():
-    if request.method=='POST':
-        u=request.form['username'];pw=request.form['password']
-        if (usr:=find_user(u)) and check_password_hash(usr['password_hash'],pw):session['user']=u;flash('Welcome','success');return redirect(url_for('profile'))
-        flash('Invalid','danger')
+    if request.method == 'POST':
+        u = request.form['username']
+        p = request.form['password']
+        user = find_user(u)
+        if user and check_password_hash(user['password_hash'], p):
+            session['user'] = u
+            flash('Welcome back!','success')
+            return redirect(url_for('profile'))
+        flash('Invalid credentials','danger')
     return render_template('login.html')
 
 @app.route('/logout')
-def logout(): session.clear(); flash('Bye','info'); return redirect(url_for('login'))
+def logout():
+    session.clear()
+    flash('Logged out.','info')
+    return redirect(url_for('login'))
 
-@app.route('/admin/courses',methods=['GET','POST'])
+@app.route('/admin/courses', methods=['GET','POST'])
 def admin_courses():
-    if find_user(session['user'])['role']!='admin':abort(403)
-    if request.method=='POST': write_course({'id':str(uuid.uuid4()),'title':request.form['title'],'description':request.form['description'],'educator':request.form['educator'],'status':'pending'});flash('Added','success')
-    return render_template('admin_courses.html',courses=read_courses(),users=read_users())
+    if find_user(session.get('user'))['role'] != 'admin':
+        abort(403)
+    if request.method == 'POST':
+        cid = str(uuid.uuid4())
+        write_course({
+            'id': cid,
+            'title': request.form['title'],
+            'description': request.form['description'],
+            'educator': request.form['educator'],
+            'status': 'pending'
+        })
+        flash('Course added.','success')
+    return render_template('admin_courses.html', courses=read_courses(), users=read_users())
 
-@app.route('/admin/quizzes',methods=['GET','POST'])
+@app.route('/admin/quizzes', methods=['GET','POST'])
 def admin_quizzes():
-    if find_user(session['user'])['role']!='admin':abort(403)
-    if request.method=='POST': write_quiz({'id':str(uuid.uuid4()),'course_id':request.form['course_id'],'question':request.form['question'],'options':request.form['options'],'answer':request.form['answer']});flash('Added','success')
-    return render_template('admin_quizzes.html',courses=read_courses(),quizzes=read_quizzes())
+    if find_user(session.get('user'))['role'] != 'admin':
+        abort(403)
+    if request.method == 'POST':
+        qid = str(uuid.uuid4())
+        write_quiz({
+            'id': qid,
+            'course_id': request.form['course_id'],
+            'question': request.form['question'],
+            'options': request.form['options'],
+            'answer': request.form['answer']
+        })
+        flash('Quiz added.','success')
+    return render_template('admin_quizzes.html', courses=read_courses(), quizzes=read_quizzes())
 
 @app.route('/admin/export')
 def admin_export():
-    if find_user(session['user'])['role']!='admin':abort(403)
-    return render_template('admin_export.html',files=['users','courses','enrollments','videos','quizzes','quiz_results','lectures'])
+    if find_user(session.get('user'))['role'] != 'admin':
+        abort(403)
+    files = ['users','courses','enrollments','videos','quizzes','quiz_results']
+    return render_template('admin_export.html', files=files)
 
 @app.route('/admin/export/<name>')
 def download(name):
-    if find_user(session['user'])['role']!='admin':abort(403)
-    path=csv_path(f"{name}.csv");abort(404) if not os.path.exists(path) else None
-    return send_file(path,as_attachment=True,download_name=f"{name}.csv")
+    if find_user(session.get('user'))['role'] != 'admin':
+        abort(403)
+    path = csv_path(f"{name}.csv")
+    if not os.path.exists(path):
+        abort(404)
+    return send_file(path, as_attachment=True, download_name=f"{name}.csv")
 
-@app.route('/calendar_events')
-def calendar_events(): return jsonify([{'id':l['id'],'title':l['title'],'start':l['start']} for l in read_lectures()])
-
-@app.route('/calendar')
-def calendar(): return render_template('calendar.html')
-
-if __name__=='__main__': app.run(debug=True)
+if __name__=='__main__':
+    app.run(debug=True)

@@ -76,7 +76,13 @@ def create_user(username, password_hash, role):
 
 # Course helpers
 def read_courses():
-    return [SimpleNamespace(**c) for c in read_csv(COURSE_FILE)]
+    # Ensure every course has a status
+    rows = read_csv(COURSE_FILE)
+    for r in rows:
+        # default missing or empty status to active
+        if 'status' not in r or not r['status']:
+            r['status'] = 'active'
+    return [SimpleNamespace(**r) for r in rows]
 
 def find_course(cid):
     return next((c for c in read_courses() if c.id == cid), None)

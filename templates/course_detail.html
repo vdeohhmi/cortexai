@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}{{ course.title }} – Cortex.ai{% endblock %}
+{% block content %}
+<h2>{{ course.title }}</h2>
+<p>{{ course.description }}</p>
+{% if not enrolled %}
+  <a href="{{ url_for('enroll', cid=course.id) }}" class="btn btn-success">Enroll</a>
+{% else %}
+  <a href="{{ url_for('lesson', cid=course.id) }}" class="btn btn-primary">Go to Lesson</a>
+{% endif %}
+{% endblock %}

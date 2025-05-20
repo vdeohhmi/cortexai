@@ -8,7 +8,7 @@ from flask import (
 )
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_dance.contrib.google import make_google_blueprint
+from flask_dance.contrib.google import make_google_blueprint, google
 from flask_mail import Mail
 from itsdangerous import URLSafeTimedSerializer
 
@@ -76,14 +76,14 @@ course_quizzes = lambda cid: [q for q in read_quizzes() if q['course_id'] == cid
 write_result = lambda r: append_csv('quiz_results.csv', r, RESULT_FIELDS)
 user_results = lambda u: [r for r in read_csv('quiz_results.csv', RESULT_FIELDS) if r['username'] == u]
 
-# --- OAuth & Email ---
+# --- OAuth & Email Setup ---
 google_bp = make_google_blueprint(
     client_id=os.environ.get('GOOGLE_OAUTH_CLIENT_ID'),
     client_secret=os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET'),
     scope=["profile", "email"],
-    redirect_url='/login/google/authorized'
+    redirect_url="/login/google/authorized"
 )
-app.register_blueprint(google_bp, url_prefix='/login')
+app.register_blueprint(google_bp, url_prefix="/login")
 
 app.config.update(
     MAIL_SERVER='smtp.gmail.com',
@@ -119,14 +119,14 @@ def login_required(f):
 if not find_user('admin'):
     write_user('admin', generate_password_hash('comp2801'), 'admin')
 if not os.path.exists(csv_path('courses.csv')):
-    for i, (t, d) in enumerate([('Intro to AI', 'Basics of AI'), ('Machine Learning', 'ML algorithms')], 1):
-        write_course({'id': str(i), 'title': t, 'description': d, 'educator': 'admin', 'status': 'active'})
+    write_course({'id': '1', 'title': 'Intro to AI',         'description': 'Basics of AI',        'educator': 'admin', 'status': 'active'})
+    write_course({'id': '2', 'title': 'Machine Learning',      'description': 'ML algorithms',      'educator': 'admin', 'status': 'active'})
 
 # --- Routes ---
 @app.route('/')
 @login_required
 def catalog():
-    return render_template('catalog.html', courses=read_courses())
+    return render_template('catalog.html', courses=[c for c in read_courses() if c['status']=='active'])
 
 @app.route('/course/<cid>')
 @login_required
@@ -139,8 +139,9 @@ def course_detail(cid):
 @app.route('/enroll/<cid>')
 @login_required
 def enroll(cid):
-    enroll_user(session['user'], cid)
-    flash('Enrolled!', 'success')
+    if not is_enrolled(session['user'], cid):
+        enroll_user(session['user'], cid)
+        flash('Enrolled!', 'success')
     return redirect(url_for('course_detail', cid=cid))
 
 @app.route('/lesson/<cid>')
@@ -159,7 +160,8 @@ def take_quiz(cid):
         for q in quizzes:
             sel = request.form.get(q['id'])
             write_result({'username': session['user'], 'quiz_id': q['id'], 'selected': sel, 'correct': str(q['answer'])})
-            if sel == str(q['answer']): score += 1
+            if sel == str(q['answer']):
+                score += 1
         return render_template('quiz_result.html', score=score, total=len(quizzes))
     return render_template('take_quiz.html', quizzes=quizzes)
 
@@ -169,10 +171,49 @@ def profile():
     user = find_user(session['user'])
     if user['role'] == 'student':
         return render_template('student_profile.html', user=user, enrolls=read_enroll(), results=user_results(session['user']))
-    elif user['role'] == 'educator':
+    if user['role'] == 'educator':
         return render_template('educator_profile.html', user=user, courses=[c for c in read_courses() if c['educator']==session['user']])
     return render_template('admin_dashboard.html')
 
+# --- Educator Route to Add Courses ---
+@app.route('/educator/add_course', methods=['POST'])
+@login_required
+def educator_add_course():
+    user = find_user(session['user'])
+    if user['role'] != 'educator':
+        abort(403)
+    cid = str(uuid.uuid4())
+    write_course({
+        'id': cid,
+        'title': request.form['title'],
+        'description': request.form['description'],
+        'educator': user['username'],
+        'status': 'active'
+    })
+    flash('Course created! Students can now enroll.', 'success')
+    return redirect(url_for('profile'))
+
+# --- Google OAuth Callback ---
+@app.route('/login/google/authorized')
+def google_authorized():
+    if not google.authorized:
+        flash('Google login failed.', 'danger')
+        return redirect(url_for('login'))
+    resp = google.get('/oauth2/v1/userinfo')
+    if not resp.ok:
+        flash('Failed to fetch user info from Google.', 'danger')
+        return redirect(url_for('login'))
+    info = resp.json()
+    email = info.get('email')
+    user = find_user(email)
+    if not user:
+        write_user(email, generate_password_hash(uuid.uuid4().hex), 'student')
+        flash('Account created via Google!', 'success')
+    session['user'] = email
+    flash(f'Welcome, {email}', 'success')
+    return redirect(url_for('profile'))
+
+# --- Auth Routes ---
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     roles = ['student', 'educator']
@@ -199,58 +240,59 @@ def logout():
     flash('Logged out.', 'info')
     return redirect(url_for('login'))
 
+# --- Admin Routes ---
 @app.route('/admin/courses', methods=['GET', 'POST'])
 @login_required
 def admin_courses():
-    if find_user(session['user'])['role'] != 'admin': abort(403)
+    if find_user(session['user'])['role'] != 'admin':
+        abort(403)
     if request.method == 'POST':
         cid = str(uuid.uuid4())
-        write_course({'id': cid, 'title': request.form['title'], 'description': request.form['description'], 'educator': request.form['educator'], 'status': 'pending'})
+        write_course({
+            'id': cid,
+            'title': request.form['title'],
+            'description': request.form['description'],
+            'educator': request.form['educator'],
+            'status': 'pending'
+        })
         flash('Course added.', 'success')
     return render_template('admin_courses.html', courses=read_courses(), users=read_users())
 
 @app.route('/admin/quizzes', methods=['GET', 'POST'])
 @login_required
 def admin_quizzes():
-    if find_user(session['user'])['role'] != 'admin': abort(403)
+    if find_user(session['user'])['role'] != 'admin':
+        abort(403)
     if request.method == 'POST':
         qid = str(uuid.uuid4())
-        write_quiz({'id': qid, 'course_id': request.form['course_id'], 'question': request.form['question'], 'options': request.form['options'], 'answer': request.form['answer']})
+        write_quiz({
+            'id': qid,
+            'course_id': request.form['course_id'],
+            'question': request.form['question'],
+            'options': request.form['options'],
+            'answer': request.form['answer']
+        })
         flash('Quiz added.', 'success')
     return render_template('admin_quizzes.html', courses=read_courses(), quizzes=read_quizzes())
 
 @app.route('/admin/export')
 @login_required
 def admin_export():
-    if find_user(session['user'])['role'] != 'admin': abort(403)
+    if find_user(session['user'])['role'] != 'admin':
+        abort(403)
     files = ['users','courses','enrollments','videos','quizzes','quiz_results']
     return render_template('admin_export.html', files=files)
 
 @app.route('/admin/export/<name>')
 @login_required
 def download(name):
-    if find_user(session['user'])['role'] != 'admin': abort(403)
+    if find_user(session['user'])['role'] != 'admin':
+        abort(403)
     path = csv_path(f"{name}.csv")
-    if not os.path.exists(path): abort(404)
+    if not os.path.exists(path):
+        abort(404)
     return send_file(path, as_attachment=True, download_name=f"{name}.csv")
 
-@app.route('/educator/add_course', methods=['POST'])
-@login_required
-def educator_add_course():
-    user = find_user(session['user'])
-    if user['role'] != 'educator':
-        abort(403)
-    # generate a new course record, mark as active so students can enroll immediately
-    cid = str(uuid.uuid4())
-    write_course({
-        'id': cid,
-        'title':   request.form['title'],
-        'description': request.form['description'],
-        'educator':    user['username'],
-        'status':      'active'
-    })
-    flash('Course created! Students can now enroll.', 'success')
-    return redirect(url_for('profile'))
-
+# --- Run ---
 if __name__ == '__main__':
     app.run(debug=True)

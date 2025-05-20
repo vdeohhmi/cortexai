@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}Profile – Cortex.ai{% endblock %}
+{% block content %}
+{% if find_user(session.get('user')).role=='student' %}
+  {% include 'student_profile.html' %}
+{% elif find_user(session.get('user')).role=='educator' %}
+  {% include 'educator_profile.html' %}
+{% else %}
+  {% include 'admin_dashboard.html' %}
+{% endif %}
+{% endblock %}

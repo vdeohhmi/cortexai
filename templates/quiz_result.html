@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}Quiz Results – Cortex.ai{% endblock %}
+{% block content %}
+<h2>Your Score: {{ score }}/{{ total }}</h2>
+<a href="{{ url_for('course_detail', cid=quizzes[0].course_id) }}" class="btn btn-primary">Back to Course</a>
+{% endblock %}

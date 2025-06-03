@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Manage Quizzes – Cortex.ai{% endblock %}
+{% block content %}
+<h2>Manage Quizzes</h2>
+<table class="table table-striped">
+  <thead>
+    <tr>
+      <th>Course</th>
+      <th>Question</th>
+      <th>Answer</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for q in quizzes %}
+    <tr>
+      <td>{{ find_course(q.course_id).title if find_course(q.course_id) else q.course_id }}</td>
+      <td>{{ q.question }}</td>
+      <td>{{ q.answer }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+<div class="card shadow-sm p-4 mt-4">
+  <h5>Add New Quiz</h5>
+  <form method="post">
+    <div class="mb-3">
+      <label class="form-label">Course</label>
+      <select name="course_id" class="form-select">
+        {% for c in courses %}
+        <option value="{{ c.id }}">{{ c.title }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Question</label>
+      <input name="question" class="form-control" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Options (pipe-separated)</label>
+      <input name="options" class="form-control" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Answer</label>
+      <input name="answer" class="form-control" required>
+    </div>
+    <button class="btn btn-success">Create Quiz</button>
+  </form>
+</div>
+{% endblock %}

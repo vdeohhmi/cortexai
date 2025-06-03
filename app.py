@@ -169,6 +169,7 @@ def inject_helpers():
     return {
         'current_user': find_user(session.get('user')),
         'find_user': find_user,
+        'find_course': find_course,
         'read_courses': read_courses,
         'read_quizzes': read_quizzes
     }

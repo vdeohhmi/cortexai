@@ -7,7 +7,7 @@
   {% for c in courses %}
     <li class="list-group-item d-flex justify-content-between align-items-center">
       {{ c.title }} ({{ c.status }})
-      <a href="{{ url_for('course_detail', cid=c.id) }}" class="btn btn-sm btn-primary">View</a>
+      <a href="{{ url_for('course_detail', course_id=c.id) }}" class="btn btn-sm btn-primary">View</a>
     </li>
   {% endfor %}
 </ul>

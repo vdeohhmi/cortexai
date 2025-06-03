@@ -19,9 +19,9 @@
       <td>{{ c.status }}</td>
       <td>
         {% if c.status=='pending' %}
-          <a href="{{ url_for('approve_course', cid=c.id) }}" class="btn btn-sm btn-success">Approve</a>
+          <a href="{{ url_for('approve_course', course_id=c.id) }}" class="btn btn-sm btn-success">Approve</a>
         {% endif %}
-        <a href="{{ url_for('course_detail', cid=c.id) }}" class="btn btn-sm btn-primary">View</a>
+        <a href="{{ url_for('course_detail', course_id=c.id) }}" class="btn btn-sm btn-primary">View</a>
       </td>
     </tr>
     {% endfor %}

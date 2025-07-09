@@ -85,6 +85,24 @@ def create_course(cid, title, desc, educator, status):
         'status': status
     })
 
+def set_course_status(cid, status):
+    rows = read_csv(COURSE_FILE)
+    changed = False
+    for r in rows:
+        if r.get('id') == cid:
+            r['status'] = status
+            changed = True
+    if changed:
+        path = csv_path(COURSE_FILE)
+        with open(path, 'w', newline='') as f:
+            writer = csv.DictWriter(
+                f,
+                fieldnames=['id', 'title', 'description', 'educator', 'status']
+            )
+            writer.writeheader()
+            writer.writerows(rows)
+    return changed
+
 
 def read_enrollments():
     return [SimpleNamespace(**e) for e in read_csv(ENROLL_FILE)]
@@ -151,6 +169,7 @@ def inject_helpers():
     return {
         'current_user': find_user(session.get('user')),
         'find_user': find_user,
+        'find_course': find_course,
         'read_courses': read_courses,
         'read_quizzes': read_quizzes
     }
@@ -222,7 +241,7 @@ def take_quiz(course_id):
             create_result(session['user'], q.id, sel, correct)
             if sel == correct:
                 score += 1
-        return render_template('quiz_result.html', score=score, total=len(quizzes))
+        return render_template('quiz_result.html', score=score, total=len(quizzes), course_id=course_id)
     return render_template('take_quiz.html', quizzes=quizzes)
 
 @app.route('/profile')
@@ -323,6 +342,16 @@ def admin_courses():
         )
         flash('Course submitted for approval', 'success')
     return render_template('admin_courses.html', courses=read_courses(), users=read_users())
+
+@app.route('/admin/approve_course/<course_id>')
+@login_required
+def approve_course(course_id):
+    user = find_user(session['user'])
+    if user.role != 'admin':
+        abort(403)
+    if set_course_status(course_id, 'active'):
+        flash('Course approved', 'success')
+    return redirect(url_for('admin_courses'))
 
 @app.route('/admin/quizzes', methods=['GET', 'POST'])
 @login_required

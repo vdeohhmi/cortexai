@@ -4,8 +4,8 @@
 <h2>{{ course.title }}</h2>
 <p>{{ course.description }}</p>
 {% if not enrolled %}
-  <a href="{{ url_for('enroll', cid=course.id) }}" class="btn btn-success">Enroll</a>
+  <a href="{{ url_for('enroll', course_id=course.id) }}" class="btn btn-success">Enroll</a>
 {% else %}
-  <a href="{{ url_for('lesson', cid=course.id) }}" class="btn btn-primary">Go to Lesson</a>
+  <a href="{{ url_for('lesson', course_id=course.id) }}" class="btn btn-primary">Go to Lesson</a>
 {% endif %}
 {% endblock %}
